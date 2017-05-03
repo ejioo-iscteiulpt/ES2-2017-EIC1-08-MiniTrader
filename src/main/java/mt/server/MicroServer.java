@@ -1,5 +1,7 @@
 package mt.server;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,6 +14,20 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 import mt.Order;
 import mt.comm.ServerComm;
@@ -223,6 +239,8 @@ public class MicroServer implements MicroTraderServer {
 
 		Order o = msg.getOrder();
 		
+	
+		
 		// save the order on map
 		saveOrder(o);
 
@@ -259,6 +277,53 @@ public class MicroServer implements MicroTraderServer {
 		//save order on map
 		Set<Order> orders = orderMap.get(o.getNickname());
 		orders.add(o);		
+		
+		try{
+		File inputFile = new File("MicrotraderPersistence.xml");
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.parse(inputFile);
+        doc.getDocumentElement().normalize();         
+        NodeList nList = doc.getElementsByTagName("Order");
+        Element newElement = doc.createElement("Order");
+      
+        // Create new element Customer
+        Element newElementCustomer = doc.createElement("Customer"); 
+        
+       
+		if(o.isSellOrder()==true){
+			newElement.setAttribute("Id", ""+o.getServerOrderID());
+			newElement.setAttribute("Type", "Sell");
+			newElement.setAttribute("Stock", o.getStock());
+			newElement.setAttribute("Units", ""+ o.getNumberOfUnits());
+			newElement.setAttribute("Price", ""+o.getPricePerUnit());
+			newElementCustomer.setTextContent(o.getNickname());
+
+		}if(o.isBuyOrder()==true){
+			newElement.setAttribute("Id", ""+o.getServerOrderID());
+			newElement.setAttribute("Type", "Buy");
+			newElement.setAttribute("Stock", o.getStock());
+			newElement.setAttribute("Units", ""+ o.getNumberOfUnits());
+			newElement.setAttribute("Price", ""+o.getPricePerUnit());
+			newElementCustomer.setTextContent(o.getNickname());
+		}
+		
+	        	newElement.appendChild(newElementCustomer);
+		     Node n = doc.getDocumentElement();
+		      n.appendChild(newElement);
+	         Transformer transformer = TransformerFactory.newInstance().newTransformer();
+	         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	         StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence.xml"));
+	         DOMSource source = new DOMSource(doc);
+	         transformer.transform(source, result);
+
+		
+        
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
+		
 	}
 
 	/**

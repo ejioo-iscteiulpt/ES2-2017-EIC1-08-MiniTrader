@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<XML>
+<Order Id="1" Price="76.0" Stock="TUFR" Type="Buy" Units="7897"/>
+<Order Id="2" Price="54.0" Stock="TE" Type="Sell" Units="9389"/>
+<Order Id="3" Price="4.0" Stock="7390" Type="Sell" Units="443"/>
+<Order Id="1" Price="87.0" Stock="EDP" Type="Sell" Units="785"/>
+<Order Id="2" Price="35.0" Stock="EDP" Type="Buy" Units="765"/>
+<Order Id="1" Price="73.0" Stock="EDP" Type="Buy" Units="679">
+<Customer>Indira</Customer>
+</Order>
+<Order Id="2" Price="34.0" Stock="EDS" Type="Sell" Units="9875">
+<Customer>Indira</Customer>
+</Order>
+<Order Id="3" Price="45.0" Stock="EDP" Type="Buy" Units="466">
+<Customer>Indira</Customer>
+</Order>
+<Order Id="4" Price="34.0" Stock="ISCTE7" Type="Sell" Units="9">
+<Customer>Indira</Customer>
+</Order>
+<Order Id="1" Price="435.0" Stock="TRD" Type="Buy" Units="786">
+<Customer>Maria</Customer>
+</Order>
+</XML>
