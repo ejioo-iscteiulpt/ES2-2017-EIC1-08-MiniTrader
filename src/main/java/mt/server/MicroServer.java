@@ -239,7 +239,9 @@ public class MicroServer implements MicroTraderServer {
 
 		Order o = msg.getOrder();
 		
-	
+		
+		// Numero de unidades tem que ser maior que 10
+	    if(o.getNumberOfUnits() >= 10){
 		
 		// save the order on map
 		saveOrder(o);
@@ -263,6 +265,7 @@ public class MicroServer implements MicroTraderServer {
 		// reset the set of changed orders
 		updatedOrders = new HashSet<>();
 
+	}
 	}
 	
 	/**
