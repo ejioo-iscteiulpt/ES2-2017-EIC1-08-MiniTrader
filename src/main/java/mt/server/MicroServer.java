@@ -270,12 +270,17 @@ public class MicroServer implements MicroTraderServer {
 	private void processSell(Order sellOrder){
 		LOGGER.log(Level.INFO, "Processing sell order...");
 		
+		if(maxSellOrdersClient(sellOrder.getNickname())){
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
 				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock()) && o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
 					doTransaction (o, sellOrder);
 				}
 			}
+		}
+}
+		else{
+			LOGGER.log(Level.INFO,sellOrder.getNickname()+ " atingiu o limite de vendas pendentes");
 		}
 		
 	}
@@ -370,4 +375,19 @@ public class MicroServer implements MicroTraderServer {
 		}
 	}
 
+	private boolean maxSellOrdersClient(String nickname){
+		int count=0;
+		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
+			Iterator<Order> it = entry.getValue().iterator();
+			while (it.hasNext()) {
+				Order o = it.next();
+				if (o.getNickname().equals(nickname)&& o.isSellOrder()) {
+					count++;
+				}
+			}
+			}
+		
+		System.out.println("Contador: "+count);
+		return count<=5;
+	}
 }
