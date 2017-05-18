@@ -47,7 +47,7 @@ public class AnalyticsFilter implements ServerComm {
 				} else {
 					List<Long> list1 = map.get(nickname);
 					if (list1.size() == 3) {
-						if (System.currentTimeMillis() - list1.get(0) <= 30000) {
+						if (System.currentTimeMillis() - list1.get(0) <= 3000) {
 							if (clientIsConnected(nickname)) {
 								disconnectClient(nickname);
 								map.remove(nickname);
@@ -101,7 +101,7 @@ public class AnalyticsFilter implements ServerComm {
 	public boolean checkDisconectedTimer(String name) {
 		for (int i = 0; i < userMessage.size(); i++) {
 			if (name.equals(userMessage.get(i).getUsername())) {
-				if (System.currentTimeMillis() - userMessage.get(i).getTime() < 30000) {
+				if (System.currentTimeMillis() - userMessage.get(i).getTime() < 3000) {
 					return false;
 				} else {
 
