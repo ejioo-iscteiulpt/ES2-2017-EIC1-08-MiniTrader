@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <XML>
-<Order Id="3" Price="45.0" Stock="EDP" Type="Buy" Units="466">
-<Customer>Indira</Customer>
+<Order Id="2" Price="1.0" Stock="797" Type="Sell" Units="56">
+<Customer>E</Customer>
 </Order>
-<Order Id="4" Price="34.0" Stock="ISCTE7" Type="Sell" Units="9">
-<Customer>Indira</Customer>
-</Order>
-<Order Id="1" Price="435.0" Stock="TRD" Type="Buy" Units="786">
-<Customer>Maria</Customer>
-</Order>
-<Order Id="3" Price="23.0" Stock="EDP" Type="Buy" Units="678">
-<Customer>Paulo</Customer>
+<Order Id="3" Price="7.0" Stock="F" Type="Sell" Units="689">
+<Customer>Filipa</Customer>
 </Order>
 </XML>
