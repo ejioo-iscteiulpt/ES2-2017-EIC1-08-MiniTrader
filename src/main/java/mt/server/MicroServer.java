@@ -375,6 +375,7 @@ public class MicroServer implements MicroTraderServer {
 	 *             exception thrown by the server indicating that there is no
 	 *             order
 	 */
+	
 	private void notifyAllClients(Order order) throws ServerException {
 		LOGGER.log(Level.INFO, "Notifying clients about the new order...");
 		if (order == null) {
