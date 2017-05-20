@@ -63,6 +63,7 @@ public class MicroServer implements MicroTraderServer {
 
 	/** The value is {@value #EMPTY} */
 	public static final int EMPTY = 0;
+	private boolean samePerson;
 
 	/**
 	 * Constructor
@@ -226,7 +227,9 @@ public class MicroServer implements MicroTraderServer {
 		LOGGER.log(Level.INFO, "Processing new order...");
 
 		Order o = msg.getOrder();
+		
 		if (o.getNumberOfUnits() >= 10) {
+			
 			// save the order on map
 			saveOrder(o);
 
@@ -237,7 +240,10 @@ public class MicroServer implements MicroTraderServer {
 
 			// if is sell order
 			if (o.isSellOrder()) {
+				if(!maxSellOrdersClient(o.getNickname())){
 				processSell(msg.getOrder());
+			}
+				
 			}
 
 			// notify clients of changed order
@@ -279,12 +285,16 @@ public class MicroServer implements MicroTraderServer {
 
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
-				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock())
-						&& o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
-
-					if (ifSame(o, sellOrder)) {
+				
+					if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock())
+							&& o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
+						if (!o.getNickname().equals(sellOrder.getNickname())) {
 						doTransaction(o, sellOrder);
 					}
+						else{
+							samePerson=true;
+							LOGGER.log(Level.INFO, "Violaçao da BR1");
+						}
 				}
 			}
 		}
@@ -302,15 +312,18 @@ public class MicroServer implements MicroTraderServer {
 
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
-
-				if (o.isSellOrder() && buyOrder.getStock().equals(o.getStock())
-						&& o.getPricePerUnit() <= buyOrder.getPricePerUnit()) {
-					if (ifSame(buyOrder, o)) {
+				
+					if (o.isSellOrder() && buyOrder.getStock().equals(o.getStock())
+							&& o.getPricePerUnit() <= buyOrder.getPricePerUnit()) {
+						if(!o.getNickname().equals(buyOrder.getNickname())){
 						doTransaction(buyOrder, o);
+					}else{
+						samePerson=true;
+						LOGGER.log(Level.INFO, "Violaçao da BR1");
+					}
 					}
 				}
 			}
-		}
 
 	}
 
@@ -367,18 +380,9 @@ public class MicroServer implements MicroTraderServer {
 		if (order == null) {
 			throw new ServerException("There was no order in the message");
 		}
-
-		int un = unFulfilledOrders(order.getNickname());
-
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
-			Iterator<Order> o = entry.getValue().iterator();
-
-			while (o.hasNext()) {
-				Order od = o.next();
-				if (order.getNumberOfUnits() >= 10 && un < 5 ) {
-
-					serverComm.sendOrder(entry.getKey(), order);
-				}
+			if(!maxSellOrdersClient(order.getNickname()) && order.getNumberOfUnits()>=10){
+			serverComm.sendOrder(entry.getKey(), order);
 			}
 		}
 	}
@@ -406,32 +410,23 @@ public class MicroServer implements MicroTraderServer {
 
 	// função comentada porque não estou a usar de momento
 
-	private int unFulfilledOrders(String clientName) {
-		LOGGER.log(Level.INFO, "Checking the if the client has more than 5 unfulfilled ordes...");
-		System.out.println("*********************** " + clientName);
-		int unfulliled = 0;
-		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
-			Iterator<Order> it = entry.getValue().iterator();
-			while (it.hasNext()) {
-				Order o = it.next();
-				if (o.getNickname().equals(clientName) && o.isSellOrder()) {
-					unfulliled++;
-					System.out.println("*********************** " + o.getNickname() + " " + o.getNumberOfUnits() + " "
-							+ o.getPricePerUnit() + " " + o.getStock());
+	
 
+	private boolean maxSellOrdersClient(String nickname) {
+		int count = 0;
+		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
+
+			for (Order o : entry.getValue()) {
+				if (o.getNickname().equals(nickname) && o.isSellOrder()) {
+					count++;
 				}
 			}
 		}
-		System.out.println(" Para o cliente - " + clientName + " Numero de SellOrders :" + unfulliled);
 
-		return unfulliled;
-
-	}
-
-	public boolean ifSame(Order buy, Order sell) {
-
-		return buy.isBuyOrder() && sell.isSellOrder() && buy.getNickname() != sell.getNickname();
-
+		if (count == 5) {
+			LOGGER.log(Level.INFO, "Violaçao da BR2");
+		}
+		return count == 5;
 	}
 
 }
