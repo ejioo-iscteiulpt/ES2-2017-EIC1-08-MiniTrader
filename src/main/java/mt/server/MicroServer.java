@@ -23,6 +23,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import mt.Order;
 import mt.comm.ServerComm;
 import mt.comm.ServerSideMessage;
@@ -294,6 +296,7 @@ public class MicroServer implements MicroTraderServer {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(inputFile);
 			doc.getDocumentElement().normalize();
+			NodeList nList = doc.getElementsByTagName("Order");
 			
 
 			// Create new element Order
@@ -315,7 +318,8 @@ public class MicroServer implements MicroTraderServer {
 				newElement.setAttribute("Price", "" + o.getPricePerUnit());
 
 			}
-
+			Node n = doc.getDocumentElement();
+			n.appendChild(newElement);
 			Transformer transformer = TransformerFactory.newInstance().newTransformer();
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence.xml"));
