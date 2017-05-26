@@ -1,5 +1,7 @@
 package mt.server;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,9 +14,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.hamcrest.core.IsSame;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import mt.Order;
 import mt.comm.ServerComm;
 import mt.comm.ServerSideMessage;
@@ -95,7 +105,8 @@ public class MicroServer implements MicroTraderServer {
 			case CONNECTED:
 				try {
 					processUserConnected(msg);
-				} catch (ServerException e) {
+				}
+				catch (ServerException e) {
 					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 				}
 				break;
@@ -104,15 +115,26 @@ public class MicroServer implements MicroTraderServer {
 				break;
 			case NEW_ORDER:
 				try {
+					this.samePerson=false;
 					verifyUserConnected(msg);
 					if (msg.getOrder().getServerOrderID() == EMPTY) {
 						msg.getOrder().setServerOrderID(id++);
 					}
-					// troquei a ordem
-					notifyAllClients(msg.getOrder());
-					processNewOrder(msg);
-
-				} catch (ServerException e) {
+					if (msg.getOrder().getNumberOfUnits() >= 10) {
+						processNewOrder(msg);
+						if(!this.samePerson){
+						notifyAllClients(msg.getOrder());
+						}
+						else{
+							LOGGER.log(Level.INFO, "Violaçao da BR1");
+						}
+						
+					}
+					else {
+						LOGGER.log(Level.INFO, "Violaçao da BR3");
+					}
+				}
+				catch (ServerException e) {
 					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 				}
 				break;
@@ -127,10 +149,10 @@ public class MicroServer implements MicroTraderServer {
 	 * Verify if user is already connected
 	 * 
 	 * @param msg
-	 *            the message sent by the client
+	 *          the message sent by the client
 	 * @throws ServerException
-	 *             exception thrown by the server indicating that the user is
-	 *             not connected
+	 *           exception thrown by the server indicating that the user is not
+	 *           connected
 	 */
 	private void verifyUserConnected(ServerSideMessage msg) throws ServerException {
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
@@ -146,11 +168,11 @@ public class MicroServer implements MicroTraderServer {
 	 * Process the user connection
 	 * 
 	 * @param msg
-	 *            the message sent by the client
+	 *          the message sent by the client
 	 * 
 	 * @throws ServerException
-	 *             exception thrown by the server indicating that the user is
-	 *             already connected
+	 *           exception thrown by the server indicating that the user is
+	 *           already connected
 	 */
 	private void processUserConnected(ServerSideMessage msg) throws ServerException {
 		LOGGER.log(Level.INFO, "Connecting client " + msg.getSenderNickname() + "...");
@@ -200,7 +222,7 @@ public class MicroServer implements MicroTraderServer {
 	 * Process the user disconnection
 	 * 
 	 * @param msg
-	 *            the message sent by the client
+	 *          the message sent by the client
 	 */
 	private void processUserDisconnected(ServerSideMessage msg) {
 		LOGGER.log(Level.INFO, "Disconnecting client " + msg.getSenderNickname() + "...");
@@ -221,48 +243,46 @@ public class MicroServer implements MicroTraderServer {
 	 * Process the new received order
 	 * 
 	 * @param msg
-	 *            the message sent by the client
+	 *          the message sent by the client
 	 */
 	private void processNewOrder(ServerSideMessage msg) throws ServerException {
 		LOGGER.log(Level.INFO, "Processing new order...");
 
 		Order o = msg.getOrder();
-		
-		if (o.getNumberOfUnits() >= 10) {
-			
-			// save the order on map
-			saveOrder(o);
 
-			// if is buy order
-			if (o.isBuyOrder()) {
-				processBuy(msg.getOrder());
-			}
+		// save the order on map
+		saveOrder(o);
 
-			// if is sell order
-			if (o.isSellOrder()) {
-				if(!maxSellOrdersClient(o.getNickname())){
-				processSell(msg.getOrder());
-			}
-				
-			}
-
-			// notify clients of changed order
-			notifyClientsOfChangedOrders();
-
-			// remove all fulfilled orders
-			removeFulfilledOrders();
-
-			// reset the set of changed orders
-			updatedOrders = new HashSet<>();
+		// if is buy order
+		if (o.isBuyOrder()) {
+			processBuy(msg.getOrder());
 		}
 
+		// if is sell order
+		if (o.isSellOrder()) {
+			int c = maxSellOrdersClient(o.getNickname());
+			if(c <= 5){
+			processSell(msg.getOrder());
+		}
+			
+		}
+		
+		// notify clients of changed order
+		notifyClientsOfChangedOrders();
+
+		// remove all fulfilled orders
+		removeFulfilledOrders();
+
+		// reset the set of changed orders
+		updatedOrders = new HashSet<>();
 	}
+	
 
 	/**
 	 * Store the order on map
 	 * 
 	 * @param o
-	 *            the order to be stored on map
+	 *          the order to be stored on map
 	 */
 	private void saveOrder(Order o) {
 		LOGGER.log(Level.INFO, "Storing the new order...");
@@ -270,17 +290,17 @@ public class MicroServer implements MicroTraderServer {
 		// save order on map
 		Set<Order> orders = orderMap.get(o.getNickname());
 		orders.add(o);
+
 	}
 
 	/**
 	 * Process the sell order
 	 * 
 	 * @param sellOrder
-	 *            Order sent by the client with a number of units of a stock and
-	 *            the price per unit he wants to sell
-	 * @throws ServerException
+	 *          Order sent by the client with a number of units of a stock and the
+	 *          price per unit he wants to sell
 	 */
-	private void processSell(Order sellOrder) throws ServerException {
+	private void processSell(Order sellOrder) {
 		LOGGER.log(Level.INFO, "Processing sell order...");
 
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
@@ -298,14 +318,15 @@ public class MicroServer implements MicroTraderServer {
 				}
 			}
 		}
+
 	}
 
 	/**
 	 * Process the buy order
 	 * 
 	 * @param buyOrder
-	 *            Order sent by the client with a number of units of a stock and
-	 *            the price per unit he wants to buy
+	 *          Order sent by the client with a number of units of a stock and the
+	 *          price per unit he wants to buy
 	 */
 	private void processBuy(Order buyOrder) {
 		LOGGER.log(Level.INFO, "Processing buy order...");
@@ -324,18 +345,19 @@ public class MicroServer implements MicroTraderServer {
 					}
 				}
 			}
+		}
 
-	}
+	
 
 	/**
 	 * Process the transaction between buyer and seller
 	 * 
 	 * @param buyOrder
-	 *            Order sent by the client with a number of units of a stock and
-	 *            the price per unit he wants to buy
+	 *          Order sent by the client with a number of units of a stock and the
+	 *          price per unit he wants to buy
 	 * @param sellerOrder
-	 *            Order sent by the client with a number of units of a stock and
-	 *            the price per unit he wants to sell
+	 *          Order sent by the client with a number of units of a stock and the
+	 *          price per unit he wants to sell
 	 */
 	private void doTransaction(Order buyOrder, Order sellerOrder) {
 		LOGGER.log(Level.INFO, "Processing transaction between seller and buyer...");
@@ -343,7 +365,8 @@ public class MicroServer implements MicroTraderServer {
 		if (buyOrder.getNumberOfUnits() >= sellerOrder.getNumberOfUnits()) {
 			buyOrder.setNumberOfUnits(buyOrder.getNumberOfUnits() - sellerOrder.getNumberOfUnits());
 			sellerOrder.setNumberOfUnits(EMPTY);
-		} else {
+		}
+		else {
 			sellerOrder.setNumberOfUnits(sellerOrder.getNumberOfUnits() - buyOrder.getNumberOfUnits());
 			buyOrder.setNumberOfUnits(EMPTY);
 		}
@@ -356,8 +379,8 @@ public class MicroServer implements MicroTraderServer {
 	 * Notifies clients about a changed order
 	 * 
 	 * @throws ServerException
-	 *             exception thrown in the method notifyAllClients, in case
-	 *             there's no order
+	 *           exception thrown in the method notifyAllClients, in case there's
+	 *           no order
 	 */
 	private void notifyClientsOfChangedOrders() throws ServerException {
 		LOGGER.log(Level.INFO, "Notifying client about the changed order...");
@@ -370,20 +393,23 @@ public class MicroServer implements MicroTraderServer {
 	 * Notifies all clients about a new order
 	 * 
 	 * @param order
-	 *            refers to a client buy order or a sell order
+	 *          refers to a client buy order or a sell order
 	 * @throws ServerException
-	 *             exception thrown by the server indicating that there is no
-	 *             order
+	 *           exception thrown by the server indicating that there is no order
 	 */
-	
 	private void notifyAllClients(Order order) throws ServerException {
 		LOGGER.log(Level.INFO, "Notifying clients about the new order...");
 		if (order == null) {
 			throw new ServerException("There was no order in the message");
 		}
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
-			if(!maxSellOrdersClient(order.getNickname()) && order.getNumberOfUnits()>=10){
+			
+			int c = maxSellOrdersClient(order.getNickname());
+			if(c <= 5){
 			serverComm.sendOrder(entry.getKey(), order);
+			}
+			else {
+				System.out.println("Erro Regra 2");
 			}
 		}
 	}
@@ -406,14 +432,7 @@ public class MicroServer implements MicroTraderServer {
 		}
 	}
 
-	// por cada cliente no mapa, não pode haver o mesmo cliente 5 vezes com sell
-	// orders unfulfilled
-
-	// função comentada porque não estou a usar de momento
-
-	
-
-	private boolean maxSellOrdersClient(String nickname) {
+	private int maxSellOrdersClient(String nickname) {
 		int count = 0;
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 
@@ -423,11 +442,8 @@ public class MicroServer implements MicroTraderServer {
 				}
 			}
 		}
-
-		if (count == 5) {
-			LOGGER.log(Level.INFO, "Violaçao da BR2");
-		}
-		return count == 5;
+System.out.println(count);
+		return count;
 	}
 
 }

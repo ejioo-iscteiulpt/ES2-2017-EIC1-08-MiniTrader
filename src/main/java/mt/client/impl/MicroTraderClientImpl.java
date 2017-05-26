@@ -1,5 +1,5 @@
 package mt.client.impl;
-//jnhbkxjcbdsjkvcbndskjvdbvjfbv
+
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,7 +9,7 @@ import mt.client.Session;
 import mt.client.ui.MicroTraderClientUI;
 import mt.comm.ClientComm;
 import mt.comm.impl.ClientCommImpl;
-// vericação local
+
 public class MicroTraderClientImpl implements MicroTraderClient {
 	
 	public static void main(String args[]) {
@@ -31,7 +31,8 @@ public class MicroTraderClientImpl implements MicroTraderClient {
 		} catch (ClassNotFoundException ex) {
 			java.util.logging.Logger.getLogger(MicroTraderClientUI.class.getName()).log(java.util.logging.Level.SEVERE,
 					null, ex);
-		} catch (InstantiationException ex) {
+		} catch (InstantiationException 
+				ex) {
 			java.util.logging.Logger.getLogger(MicroTraderClientUI.class.getName()).log(java.util.logging.Level.SEVERE,
 					null, ex);
 		} catch (IllegalAccessException ex) {
